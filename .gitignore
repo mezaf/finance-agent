@@ -1,9 +1,46 @@
+# Local secrets and OAuth state
 .env
-finance.db
-token.json
+.env.*
+!.env.example
 credentials.json
+*.credentials.json
+token.json
+*.token.json
+
+# Personal and generated data
+finance.db*
+*.sqlite
+*.sqlite3
+*.pdf
+local_input/
+local_processed/
+uploaded_pdfs/
+
+# Python environment and caches
+.venv/
+venv/
+bin/
+include/
+lib/
+lib64/
+share/
+pyvenv.cfg
 __pycache__/
-*.pyc
-bin*
-include*
-lib*
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Node dependencies and builds
+node_modules/
+web_app/frontend/build/
+dist/
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local scripts and logs
+*.ps1
+*.sh
+*.log

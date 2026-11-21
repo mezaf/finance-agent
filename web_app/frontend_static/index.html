@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Finance Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Plotly.js CDN with automatic fallback -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script>
+    if (typeof Plotly === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@2.35.2/plotly.min.js"><\/script>');
+    }
+  </script>
+  <script>
+    if (typeof Plotly === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');
+    }
+  </script>
+  <style>
+    /* ==========================================================================
+       FINANCIAL TRUST PALETTE & DESIGN SYSTEM
+       ========================================================================== */
+    :root {
+      --color-primary: #1B3A5C;
+      --color-primary-hover: #26527E;
+      --color-secondary: #3E7C74;
+      --color-secondary-tint: #EBF4F3;
+      --color-bg: #F7F8FA;
+      --color-surface: #FFFFFF;
+      --color-border: #E2E5E9;
+      --color-text-primary: #1A2530;
+      --color-text-secondary: #5B6672;
+      --color-warning: #C58B2E;
+      --color-danger: #B54B3F;
+      --color-user-bubble: #F0F3F6;
+
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --border-radius-sm: 6px;
+      --border-radius-md: 10px;
+      --border-radius-lg: 14px;
+      --panel-width: clamp(320px, 25vw, 400px);
+      --tab-width: 32px;
+      --transition-speed: 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-bg);
+      color: var(--color-text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      height: 56px;
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 24px;
+      height: 24px;
+      fill: var(--color-secondary);
+    }
+
+    .filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .active-filter-tag {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-primary);
+      background-color: var(--color-secondary-tint);
+      border: 1px solid rgba(62, 124, 116, 0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reset-btn {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-secondary);
+      background: none;
+      border: 1px solid var(--color-border);
+      padding: 5px 12px;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .reset-btn:hover {
+      background-color: var(--color-bg);
+      border-color: var(--color-secondary);
+    }
+
+    /* Main Container Layout */
+    .app-container {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    /* Chart Grid Area */
+    .chart-area {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: minmax(260px, auto) minmax(320px, auto) minmax(260px, auto);
+      gap: 16px;
+      transition: margin-right var(--transition-speed) ease;
+      margin-right: var(--tab-width);
+    }
+
+    .app-container.panel-expanded .chart-area {
+      margin-right: var(--panel-width);
+    }
+
+    .chart-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .chart-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+
+    .chart-wrapper {
+      flex: 1;
+      width: 100%;
+      min-height: 220px;
+    }
+
+    /* Slim Vertical Assistant Tab */
+    .assistant-tab {
+      position: fixed;
+      right: 0;
+      top: 56px;
+      bottom: 0;
+      width: var(--tab-width);
+      background-color: var(--color-primary);
+      color: var(--color-surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+
+    .assistant-tab:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .assistant-tab-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .activity-badge {
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-warning);
+      border-radius: 50%;
+      display: none;
+    }
+
+    .activity-badge.active {
+      display: block;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    /* Collapsible Side Panel */
+    .side-panel {
+      position: fixed;
+      right: 0;
+      top: 56px;
+      bottom: 0;
+      width: var(--panel-width);
+      background-color: var(--color-surface);
+      border-left: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      z-index: 90;
+      transform: translateX(100%);
+      transition: transform var(--transition-speed) ease;
+    }
+
+    .app-container.panel-expanded .side-panel {
+      transform: translateX(0);
+    }
+
+    .panel-header {
+      height: 44px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--color-bg);
+    }
+
+    .panel-header-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .collapse-btn {
+      background: none;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--border-radius-sm);
+    }
+
+    .collapse-btn:hover {
+      background-color: var(--color-border);
+      color: var(--color-text-primary);
+    }
+
+    /* Panel Content: Stacked Layout */
+    .panel-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top: Upload Drop Zone */
+    .upload-zone {
+      height: 100px;
+      margin: 12px;
+      border: 2px dashed var(--color-border);
+      border-radius: var(--border-radius-md);
+      background-color: var(--color-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--color-secondary);
+      background-color: var(--color-secondary-tint);
+    }
+
+    .upload-icon {
+      width: 20px;
+      height: 20px;
+      fill: var(--color-secondary);
+      margin-bottom: 4px;
+    }
+
+    .upload-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .upload-subtext {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+    }
+
+    .upload-status {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-top: 4px;
+      display: none;
+    }
+
+    /* Bottom: Chat Thread */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-bubble {
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .chat-bubble.assistant {
+      align-self: flex-start;
+      background-color: var(--color-secondary-tint);
+      color: var(--color-primary);
+      border: 1px solid rgba(62, 124, 116, 0.15);
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      background-color: var(--color-user-bubble);
+      color: var(--color-text-primary);
+    }
+
+    .action-btn-row {
+      margin-top: 8px;
+    }
+
+    .action-btn {
+      background-color: var(--color-secondary);
+      color: #FFFFFF;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--border-radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background-color: var(--color-primary);
+    }
+
+    .insight-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      padding: 8px 10px;
+      margin-top: 6px;
+      font-size: 11px;
+    }
+
+    .insight-card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px stroke var(--color-bg);
+    }
+
+    .chat-input-wrapper {
+      padding: 10px;
+      border-top: 1px solid var(--color-border);
+      background-color: var(--color-surface);
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      font-family: var(--font-family);
+      font-size: 12px;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      outline: none;
+    }
+
+    .chat-input:focus {
+      border-color: var(--color-primary);
+    }
+
+    .send-btn {
+      background-color: var(--color-primary);
+      color: var(--color-surface);
+      border: none;
+      padding: 8px 14px;
+      border-radius: var(--border-radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .send-btn:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    /* ---- Global Status Indicator (header bar) ---- */
+    .global-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .global-status.idle {
+      color: var(--color-secondary);
+      background-color: var(--color-secondary-tint);
+    }
+
+    .global-status.loading {
+      color: var(--color-primary);
+      background-color: #E8EDF2;
+    }
+
+    .global-status.processing {
+      color: #FFFFFF;
+      background-color: var(--color-warning);
+      animation: statusPulse 1.5s ease-in-out infinite;
+    }
+
+    .global-status.error {
+      color: #FFFFFF;
+      background-color: var(--color-danger);
+    }
+
+    .global-status.success {
+      color: #FFFFFF;
+      background-color: var(--color-secondary);
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    .global-status.processing .status-dot {
+      animation: dotBlink 0.8s ease-in-out infinite;
+    }
+
+    @keyframes dotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ---- Chat Typing Indicator ---- */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 14px;
+      align-self: flex-start;
+      background-color: var(--color-secondary-tint);
+      border: 1px solid rgba(62, 124, 116, 0.15);
+      border-radius: var(--border-radius-md);
+      max-width: 120px;
+    }
+
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background-color: var(--color-secondary);
+      border-radius: 50%;
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    /* ---- Upload Zone Processing State ---- */
+    .upload-zone.processing {
+      border-color: var(--color-warning);
+      background-color: #FFF8ED;
+      pointer-events: none;
+    }
+
+    .upload-progress {
+      width: 80%;
+      height: 4px;
+      background-color: var(--color-border);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .upload-progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: var(--color-secondary);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    .upload-zone.processing .upload-progress {
+      display: block;
+    }
+
+    .upload-zone.processing .upload-progress-bar {
+      animation: progressIndeterminate 2s ease-in-out infinite;
+    }
+
+    @keyframes progressIndeterminate {
+      0% { width: 0%; margin-left: 0; }
+      50% { width: 60%; margin-left: 20%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+
+    /* ---- Chat Input Disabled State ---- */
+    .chat-input-wrapper.disabled .chat-input {
+      background-color: var(--color-bg);
+      color: var(--color-text-secondary);
+      pointer-events: none;
+    }
+
+    .chat-input-wrapper.disabled .send-btn {
+      background-color: var(--color-border);
+      pointer-events: none;
+    }
+
+    /* Spend Review Card Styles */
+    .spend-review-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-md);
+      padding: 10px;
+      margin-top: 6px;
+      box-shadow: 0 4px 12px rgba(27, 58, 92, 0.05);
+    }
+
+    .review-card-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .review-description { color: var(--color-text-primary); font-weight: 700; font-size: 12px; }
+    .review-path { color: var(--color-text-secondary); font-size: 10px; margin-top: 2px; }
+    .review-amount { color: var(--color-primary); font-weight: 800; white-space: nowrap; font-size: 12px; }
+    .review-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 7px; color: var(--color-text-secondary); font-size: 10px; }
+    .review-badge { border-radius: 12px; padding: 2px 7px; font-weight: 700; }
+    .review-badge.unidentified { background: #FFF1E8; color: #9A4D25; }
+    .review-badge.discretionary { background: var(--color-secondary-tint); color: var(--color-secondary); }
+    .source-dropdown { margin-top: 7px; font-size: 10px; color: var(--color-primary); }
+    .source-dropdown summary { cursor: pointer; width: fit-content; color: var(--color-primary); font-weight: 700; }
+    .source-popover { margin-top: 5px; padding: 7px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); }
+    .source-popover a { color: var(--color-primary); text-decoration: underline; word-break: break-word; }
+
+    /* Mobile Overlay Breakpoint (<900px) */
+    @media (max-width: 900px) {
+      .app-container.panel-expanded .chart-area {
+        margin-right: var(--tab-width);
+      }
+
+      .side-panel {
+        width: 85%;
+        max-width: 360px;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .chart-area {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Bar -->
+  <header class="header-bar">
+    <div class="brand-title">
+      <svg class="brand-icon" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm0-4h-2V7h2v7z"/>
+      </svg>
+      Personal Finance Dashboard
+    </div>
+
+    <div class="filter-controls">
+      <div id="globalStatus" class="global-status idle">
+        <span class="status-dot"></span>
+        <span id="globalStatusText">Ready</span>
+      </div>
+      <div id="filterPill" class="active-filter-tag" style="display: none;">
+        <span id="filterPillText">All Data</span>
+      </div>
+      <button id="resetFiltersBtn" class="reset-btn" style="display: none;" onclick="resetFilters()">Reset Filters</button>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <div id="appContainer" class="app-container">
+
+    <!-- Chart Grid Area -->
+    <main class="chart-area">
+
+      <!-- Top: Monthly Expenses Column Chart -->
+      <section class="chart-card full-width">
+        <div class="chart-title">Monthly Expenses</div>
+        <div id="monthlyExpensesChart" class="chart-wrapper"></div>
+      </section>
+
+      <!-- Middle Left: Macro Groups Pie Chart -->
+      <section class="chart-card">
+        <div class="chart-title">20/70/10 Budget Macro Groups</div>
+        <div id="macroGroupsChart" class="chart-wrapper"></div>
+      </section>
+
+      <!-- Middle Right: Category Sunburst -->
+      <section class="chart-card">
+        <div class="chart-title">Category & Description Breakdown</div>
+        <div id="categorySunburstChart" class="chart-wrapper"></div>
+      </section>
+
+      <!-- Bottom: Installments Over Time Stacked Column -->
+      <section class="chart-card full-width">
+        <div class="chart-title">Installments Over Time (Billed vs. Projected Upcoming)</div>
+        <div id="installmentsChart" class="chart-wrapper"></div>
+      </section>
+
+    </main>
+
+    <!-- Slim Assistant Tab (Always Visible when Collapsed) -->
+    <div id="assistantTab" class="assistant-tab" onclick="togglePanel(true)">
+      <div class="assistant-tab-label">
+        <div id="activityBadge" class="activity-badge"></div>
+        Assistant
+      </div>
+    </div>
+
+    <!-- Collapsible Side Panel -->
+    <aside id="sidePanel" class="side-panel">
+      
+      <!-- Panel Header -->
+      <div class="panel-header">
+        <span class="panel-header-title">Finance Assistant & Statement Intake</span>
+        <button class="collapse-btn" onclick="togglePanel(false)" title="Collapse Panel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div class="panel-body">
+        
+        <!-- Top: Upload Drop Zone -->
+        <div id="uploadZone" class="upload-zone" onclick="document.getElementById('pdfFileInput').click()">
+          <svg class="upload-icon" viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+          </svg>
+          <div class="upload-text">Drag & drop bank statement PDF here</div>
+          <div class="upload-subtext">or click to browse from computer</div>
+          <div id="uploadStatus" class="upload-status"></div>
+          <div class="upload-progress"><div class="upload-progress-bar"></div></div>
+          <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelect(event)" />
+        </div>
+
+        <!-- Bottom: Chat Thread -->
+        <div class="chat-container">
+          <div id="chatMessages" class="chat-messages">
+            <div class="chat-bubble assistant">
+              Hello! I'm your Personal Finance Assistant. You can upload PDF bank statements or ask me questions about your spending patterns.
+            </div>
+          </div>
+
+          <div class="chat-input-wrapper">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask about spending or insights..." onkeypress="handleKeyPress(event)" />
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Embedded Initial Data Fallback -->
+  <script id="initial-data" type="application/json">
+  {
+    "monthly_expenses": { "chart": "monthly_expenses", "data": [] },
+    "macro_groups": { "chart": "macro_groups", "data": [] },
+    "category_sunburst": { "chart": "category_sunburst", "data": { "ids": [], "labels": [], "parents": [], "values": [] } },
+    "installments": { "chart": "installments_over_time", "data": [] }
+  }
+  </script>
+
+  <!-- Application Logic & Plotly Initialization -->
+  <script>
+    // ==========================================================================
+    // FIXED CATEGORY COLOR PALETTE (Strict Financial Trust Rules)
+    // ==========================================================================
+    const CATEGORY_COLORS = {
+      // 70% Needs / Fixed Pays (Blue Family)
+      "Supermarket": "#1B3A5C",
+      "Utilities": "#3D6A94",
+      "Insurance": "#7FA6C9",
+      
+      // 20% Savings & Invest (Green Family)
+      "Savings": "#2F6B4F",
+      "Investment": "#6FA985",
+
+      // 10% Leisure & Others (Warm Neutral Family)
+      "Leisure": "#C58B2E",
+      "Streaming": "#D9A857",
+      "Food Delivery": "#B8895F",
+      "Other/Uncategorized": "#8C8378"
+    };
+
+    const MACRO_GROUP_COLORS = {
+      "70% Needs/Fixed Pays": "#1B3A5C",
+      "20% Savings & Invest": "#2F6B4F",
+      "10% Leisure & Others": "#C58B2E"
+    };
+
+    // State Variables
+    let rawDataset = {};
+    let activeMonthFilter = null;
+    let activeMacroFilter = null;
+    let isPanelOpen = false;
+    let lastUploadedFileId = null;
+    let statusResetTimer = null;
+
+    // ==========================================================================
+    // GLOBAL STATUS MANAGEMENT
+    // ==========================================================================
+    function setAppStatus(state, text) {
+      const el = document.getElementById('globalStatus');
+      const textEl = document.getElementById('globalStatusText');
+      el.className = 'global-status ' + state;
+      textEl.textContent = text;
+
+      // Auto-revert success/error back to idle after 4s
+      if (statusResetTimer) clearTimeout(statusResetTimer);
+      if (state === 'success' || state === 'error') {
+        statusResetTimer = setTimeout(() => setAppStatus('idle', 'Ready'), 4000);
+      }
+    }
+
+    function setChatInputEnabled(enabled) {
+      const wrapper = document.querySelector('.chat-input-wrapper');
+      if (enabled) {
+        wrapper.classList.remove('disabled');
+        document.getElementById('chatInput').placeholder = 'Ask about spending or insights...';
+      } else {
+        wrapper.classList.add('disabled');
+        document.getElementById('chatInput').placeholder = 'Waiting for response...';
+      }
+    }
+
+    function showTypingIndicator() {
+      const container = document.getElementById('chatMessages');
+      // Remove any existing indicator first
+      removeTypingIndicator();
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.id = 'typingIndicator';
+      indicator.innerHTML = '<span></span><span></span><span></span>';
+      container.appendChild(indicator);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const existing = document.getElementById('typingIndicator');
+      if (existing) existing.remove();
+    }
+
+    function setUploadZoneProcessing(active) {
+      const zone = document.getElementById('uploadZone');
+      if (active) {
+        zone.classList.add('processing');
+      } else {
+        zone.classList.remove('processing');
+      }
+    }
+
+    // Initialize Page
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        const rawJson = document.getElementById("initial-data").textContent;
+        rawDataset = JSON.parse(rawJson);
+      } catch (e) {
+        console.error("Failed to parse initial JSON dataset:", e);
+      }
+
+      // Fetch live data from backend SQL queries
+      setAppStatus('loading', 'Loading charts...');
+      fetchAndRenderLiveCharts();
+      setupDragAndDrop();
+    });
+
+    // Fetch live SQL chart data from /api/charts
+    async function fetchAndRenderLiveCharts(month = activeMonthFilter, macroGroup = activeMacroFilter) {
+      activeMonthFilter = month;
+      activeMacroFilter = macroGroup;
+      updateFilterUI();
+      setAppStatus('loading', 'Loading charts...');
+
+      let url = "/api/charts";
+      const params = new URLSearchParams();
+      if (month) params.append("month", month);
+      if (macroGroup) params.append("macro_group", macroGroup);
+      if (params.toString()) url += "?" + params.toString();
+
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const liveData = await res.json();
+          if (liveData.monthly_expenses) rawDataset.monthly_expenses = liveData.monthly_expenses;
+          if (liveData.macro_groups) rawDataset.macro_groups = liveData.macro_groups;
+          if (liveData.category_sunburst) rawDataset.category_sunburst = liveData.category_sunburst;
+          if (liveData.installments) rawDataset.installments = liveData.installments;
+          setAppStatus('success', 'Charts updated');
+        } else {
+          setAppStatus('error', 'Failed to load charts');
+        }
+      } catch (e) {
+        console.warn("Could not fetch live API charts, falling back to local state:", e);
+        setAppStatus('idle', 'Offline mode');
+      }
+
+      renderAllCharts();
+    }
+
+    // ==========================================================================
+    // CHART RENDERING ENGINE (Plotly.js)
+    // ==========================================================================
+    let plotlyRetryCount = 0;
+
+    function renderAllCharts() {
+      if (typeof Plotly === 'undefined') {
+        if (plotlyRetryCount < 10) {
+          plotlyRetryCount++;
+          console.warn(`Plotly library not ready yet (attempt ${plotlyRetryCount}/10). Retrying in 300ms...`);
+          setTimeout(renderAllCharts, 300);
+          return;
+        } else {
+          console.error("Plotly library failed to load from CDNs.");
+          return;
+        }
+      }
+
+      renderMonthlyExpensesChart();
+      renderMacroGroupsChart();
+      renderCategorySunburstChart();
+      renderInstallmentsChart();
+      updateFilterUI();
+    }
+
+    // 1. Monthly Expenses Column Chart
+    function renderMonthlyExpensesChart() {
+      const expensesData = rawDataset.monthly_expenses?.data || [];
+      const xMonths = expensesData.map(d => d.month);
+      const yTotals = expensesData.map(d => d.total);
+
+      const colors = xMonths.map(m => (m === activeMonthFilter ? "#26527E" : "#1B3A5C"));
+
+      const trace = {
+        x: xMonths,
+        y: yTotals,
+        type: 'bar',
+        marker: { color: colors, cornerradius: 4 },
+        hoverinfo: 'x+y',
+        hovertemplate: '<b>%{x}</b><br>Total: $%{y:,.2f}<extra></extra>'
+      };
+
+      const layout = {
+        margin: { l: 45, r: 15, t: 10, b: 35 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter', size: 11, color: '#1A2530' },
+        xaxis: { type: 'category', gridcolor: '#E2E5E9' },
+        yaxis: { gridcolor: '#E2E5E9', tickprefix: '$' }
+      };
+
+      Plotly.newPlot('monthlyExpensesChart', [trace], layout, { displayModeBar: false, responsive: true });
+
+      document.getElementById('monthlyExpensesChart').on('plotly_click', data => {
+        if (data.points && data.points[0]) {
+          const clickedMonth = data.points[0].x;
+          const newMonth = (activeMonthFilter === clickedMonth) ? null : clickedMonth;
+          fetchAndRenderLiveCharts(newMonth, activeMacroFilter);
+        }
+      });
+    }
+
+    // 2. Macro Groups Pie Chart
+    function renderMacroGroupsChart() {
+      let macroData = rawDataset.macro_groups?.data || [];
+
+      const labels = macroData.map(d => d.macro_group);
+      const values = macroData.map(d => d.total);
+      const colors = labels.map(l => MACRO_GROUP_COLORS[l] || "#8C8378");
+
+      const trace = {
+        labels: labels,
+        values: values,
+        type: 'pie',
+        hole: 0.45,
+        marker: { colors: colors },
+        textinfo: 'percent',
+        hoverinfo: 'label+value',
+        hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>'
+      };
+
+      const layout = {
+        margin: { l: 15, r: 15, t: 10, b: 10 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter', size: 11, color: '#1A2530' },
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.1 }
+      };
+
+      Plotly.newPlot('macroGroupsChart', [trace], layout, { displayModeBar: false, responsive: true });
+
+      document.getElementById('macroGroupsChart').on('plotly_click', data => {
+        if (data.points && data.points[0]) {
+          const clickedMacro = data.points[0].label;
+          const newMacro = (activeMacroFilter === clickedMacro) ? null : clickedMacro;
+          fetchAndRenderLiveCharts(activeMonthFilter, newMacro);
+        }
+      });
+    }
+
+    // 3. Category Sunburst Chart
+    function renderCategorySunburstChart() {
+      const sunburstObj = rawDataset.category_sunburst?.data || { ids: [], labels: [], parents: [], values: [] };
+      
+      const ids = [...sunburstObj.ids];
+      const labels = [...sunburstObj.labels];
+      const parents = [...sunburstObj.parents];
+      const values = [...sunburstObj.values];
+
+      const colors = ids.map((id, index) => {
+        const parent = parents[index];
+        const catName = (parent === "") ? id : parent;
+        return CATEGORY_COLORS[catName] || CATEGORY_COLORS[id] || "#8C8378";
+      });
+
+      const trace = {
+        type: 'sunburst',
+        ids: ids,
+        labels: labels,
+        parents: parents,
+        values: values,
+        branchvalues: 'total',
+        marker: { colors: colors },
+        hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>'
+      };
+
+      const layout = {
+        margin: { l: 10, r: 10, t: 10, b: 10 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter', size: 11, color: '#1A2530' }
+      };
+
+      Plotly.newPlot('categorySunburstChart', [trace], layout, { displayModeBar: false, responsive: true });
+    }
+
+    // 4. Installments Over Time Stacked Column Chart
+    function renderInstallmentsChart() {
+      const instData = rawDataset.installments?.data || [];
+
+      const billedMonths = instData.filter(d => d.type === "billed").map(d => d.month);
+      const billedAmounts = instData.filter(d => d.type === "billed").map(d => d.amount);
+
+      const upcomingMonths = instData.filter(d => d.type === "upcoming").map(d => d.month);
+      const upcomingAmounts = instData.filter(d => d.type === "upcoming").map(d => d.amount);
+
+      const traceBilled = {
+        x: billedMonths,
+        y: billedAmounts,
+        name: 'Historical Billed',
+        type: 'bar',
+        marker: { color: '#1B3A5C', cornerradius: 4 },
+        hovertemplate: '<b>%{x} (Billed)</b><br>$%{y:,.2f}<extra></extra>'
+      };
+
+      const traceUpcoming = {
+        x: upcomingMonths,
+        y: upcomingAmounts,
+        name: 'Projected Upcoming',
+        type: 'bar',
+        marker: { color: '#C58B2E', cornerradius: 4 },
+        hovertemplate: '<b>%{x} (Upcoming)</b><br>$%{y:,.2f}<extra></extra>'
+      };
+
+      const layout = {
+        barmode: 'stack',
+        margin: { l: 45, r: 15, t: 10, b: 35 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter', size: 11, color: '#1A2530' },
+        xaxis: { type: 'category', gridcolor: '#E2E5E9' },
+        yaxis: { gridcolor: '#E2E5E9', tickprefix: '$' },
+        legend: { orientation: 'h', x: 0, y: 1.15 }
+      };
+
+      Plotly.newPlot('installmentsChart', [traceBilled, traceUpcoming], layout, { displayModeBar: false, responsive: true });
+    }
+
+    // ==========================================================================
+    // CROSS-FILTER MANAGEMENT
+    // ==========================================================================
+    function updateFilterUI() {
+      const filterPill = document.getElementById('filterPill');
+      const filterPillText = document.getElementById('filterPillText');
+      const resetBtn = document.getElementById('resetFiltersBtn');
+
+      let activeFilters = [];
+      if (activeMonthFilter) activeFilters.push(`Month: ${activeMonthFilter}`);
+      if (activeMacroFilter) activeFilters.push(`Group: ${activeMacroFilter}`);
+
+      if (activeFilters.length > 0) {
+        filterPillText.textContent = activeFilters.join(' | ');
+        filterPill.style.display = 'flex';
+        resetBtn.style.display = 'inline-block';
+      } else {
+        filterPill.style.display = 'none';
+        resetBtn.style.display = 'none';
+      }
+    }
+
+    function resetFilters() {
+      fetchAndRenderLiveCharts(null, null);
+    }
+
+    // ==========================================================================
+    // SIDE PANEL & STATE PERSISTENCE
+    // ==========================================================================
+    function togglePanel(open) {
+      const container = document.getElementById('appContainer');
+      const badge = document.getElementById('activityBadge');
+      
+      isPanelOpen = open;
+      if (open) {
+        container.classList.add('panel-expanded');
+        badge.classList.remove('active');
+      } else {
+        container.classList.remove('panel-expanded');
+      }
+
+      setTimeout(() => {
+        Plotly.Plots.resize('monthlyExpensesChart');
+        Plotly.Plots.resize('macroGroupsChart');
+        Plotly.Plots.resize('categorySunburstChart');
+        Plotly.Plots.resize('installmentsChart');
+      }, 300);
+    }
+
+    // ==========================================================================
+    // DRAG AND DROP FILE UPLOAD & INTAKE HANDLER
+    // ==========================================================================
+    function setupDragAndDrop() {
+      const uploadZone = document.getElementById('uploadZone');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'), false);
+      });
+
+      uploadZone.addEventListener('drop', e => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          uploadFile(files[0]);
+        }
+      });
+    }
+
+    function handleFileSelect(event) {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        uploadFile(files[0]);
+      }
+    }
+
+    async function uploadFile(file) {
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        alert("Please upload a valid PDF bank statement.");
+        return;
+      }
+
+      const statusEl = document.getElementById('uploadStatus');
+      statusEl.style.display = 'block';
+      statusEl.textContent = `Uploading ${file.name}...`;
+      setAppStatus('loading', `Uploading ${file.name}...`);
+      setUploadZoneProcessing(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+
+        if (response.ok && result.fileId) {
+          lastUploadedFileId = result.fileId;
+          statusEl.textContent = `Uploaded: ${result.fileName || file.name}`;
+          
+          addChatMessage(
+            'assistant',
+            `Statement '${result.fileName || file.name}' uploaded. Processing automatically...`,
+            result.fileId,
+            result.fileName || file.name
+          );
+
+          // Automatically trigger processing
+          await processUploadedFileId(result.fileId, result.fileName || file.name);
+        } else {
+          statusEl.textContent = `Error: ${result.error || 'Upload failed'}`;
+          setAppStatus('error', 'Upload failed');
+          setUploadZoneProcessing(false);
+        }
+      } catch (err) {
+        statusEl.textContent = `Selected: ${file.name}`;
+        setAppStatus('error', 'Upload error');
+        setUploadZoneProcessing(false);
+        addChatMessage('assistant', `Could not upload '${file.name}'. Check if the server is running.`);
+      }
+    }
+
+    async function processUploadedFileId(fileId, fileName) {
+      setAppStatus('processing', `Processing ${fileName}...`);
+      setUploadZoneProcessing(true);
+      setChatInputEnabled(false);
+      const statusEl = document.getElementById('uploadStatus');
+
+      addChatMessage('assistant', `Processing '${fileName}' — identifying bank, extracting transactions, categorizing, embedding, and writing to database...`);
+      showTypingIndicator();
+
+      try {
+        const res = await fetch(`/api/process_upload/${fileId}`, { method: 'POST' });
+        removeTypingIndicator();
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          const txCount = data.transactions_written || 0;
+          statusEl.textContent = `Done: ${txCount} transactions from ${fileName}`;
+          addChatMessage('assistant', `Successfully processed '${fileName}' — ${txCount} transactions committed to database. Charts are updating now.`);
+          setAppStatus('success', `${txCount} transactions loaded`);
+          if (data.charts) {
+            if (data.charts.monthly_expenses) rawDataset.monthly_expenses = data.charts.monthly_expenses;
+            if (data.charts.macro_groups) rawDataset.macro_groups = data.charts.macro_groups;
+            if (data.charts.category_sunburst) rawDataset.category_sunburst = data.charts.category_sunburst;
+            if (data.charts.installments) rawDataset.installments = data.charts.installments;
+          }
+          fetchAndRenderLiveCharts();
+        } else {
+          statusEl.textContent = `Failed: ${fileName}`;
+          addChatMessage('assistant', `Intake failed for '${fileName}': ${data.message || data.error || 'Unknown error'}`);
+          setAppStatus('error', 'Intake failed');
+        }
+      } catch (e) {
+        removeTypingIndicator();
+        statusEl.textContent = `Error: ${fileName}`;
+        addChatMessage('assistant', `Network error processing '${fileName}': ${e.message}`);
+        setAppStatus('error', 'Network error');
+      } finally {
+        setUploadZoneProcessing(false);
+        setChatInputEnabled(true);
+      }
+    }
+
+    // ==========================================================================
+    // CHAT ASSISTANT THREAD HANDLER
+    // ==========================================================================
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    async function sendMessage() {
+      const inputEl = document.getElementById('chatInput');
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      addChatMessage('user', query);
+      inputEl.value = '';
+      setChatInputEnabled(false);
+      setAppStatus('loading', 'Waiting for AI response...');
+      showTypingIndicator();
+
+      if (!isPanelOpen) {
+        document.getElementById('activityBadge').classList.add('active');
+      }
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query, fileId: lastUploadedFileId })
+        });
+
+        removeTypingIndicator();
+
+        if (response.ok) {
+          const res = await response.json();
+          addChatMessage('assistant', res.reply || res.answer_summary || "Query processed.");
+          setAppStatus('success', 'Response received');
+          if (res.charts) {
+            if (res.charts.monthly_expenses) rawDataset.monthly_expenses = res.charts.monthly_expenses;
+            if (res.charts.macro_groups) rawDataset.macro_groups = res.charts.macro_groups;
+            if (res.charts.category_sunburst) rawDataset.category_sunburst = res.charts.category_sunburst;
+            if (res.charts.installments) rawDataset.installments = res.charts.installments;
+            renderAllCharts();
+          }
+          if (res.supporting_data) {
+            renderSupportingDataCard(res.supporting_data);
+          }
+        } else {
+          setAppStatus('loading', 'Querying analysis engine...');
+          showTypingIndicator();
+          const fallbackRes = await fetch('/api/analysis_query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: query })
+          });
+          removeTypingIndicator();
+          const insight = await fallbackRes.json();
+          addChatMessage('assistant', insight.answer_summary || "Analysis query complete.");
+          setAppStatus('success', 'Analysis complete');
+          if (insight.supporting_data) {
+            renderSupportingDataCard(insight.supporting_data);
+          }
+        }
+      } catch (e) {
+        removeTypingIndicator();
+        addChatMessage('assistant', `Could not reach the server. Is it running?`);
+        setAppStatus('error', 'Server unreachable');
+      } finally {
+        setChatInputEnabled(true);
+        if (!isPanelOpen) {
+          document.getElementById('activityBadge').classList.add('active');
+        }
+      }
+    }
+
+    function addChatMessage(sender, text, fileId = null, fileName = null) {
+      const messagesContainer = document.getElementById('chatMessages');
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${sender}`;
+      bubble.textContent = text;
+
+      if (fileId) {
+        const btnRow = document.createElement('div');
+        btnRow.className = 'action-btn-row';
+        const actionBtn = document.createElement('button');
+        actionBtn.className = 'action-btn';
+        actionBtn.textContent = '⚡ Process Statement Now';
+        actionBtn.onclick = () => processUploadedFileId(fileId, fileName || 'statement');
+        btnRow.appendChild(actionBtn);
+        bubble.appendChild(btnRow);
+      }
+
+      messagesContainer.appendChild(bubble);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function renderSupportingDataCard(data) {
+      if (data && !Array.isArray(data) && Array.isArray(data.review_candidates)) {
+        renderSpendReviewCards(data.review_candidates);
+        return;
+      }
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      const messagesContainer = document.getElementById('chatMessages');
+      const card = document.createElement('div');
+      card.className = 'insight-card';
+
+      data.slice(0, 4).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'insight-card-row';
+        const label = item.description || item.category || 'Item';
+        const amt = item.total_amount || item.amount || 0;
+        row.innerHTML = `<span><b>${escapeHtml(label)}</b></span><span>$${parseFloat(amt).toFixed(2)}</span>`;
+        card.appendChild(row);
+      });
+
+      messagesContainer.appendChild(card);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function renderSpendReviewCards(candidates) {
+      if (!candidates || candidates.length === 0) return;
+      const messagesContainer = document.getElementById('chatMessages');
+
+      candidates.slice(0, 8).forEach(candidate => {
+        const card = document.createElement('article');
+        card.className = 'spend-review-card';
+        const badges = [];
+        if (candidate.unidentified) badges.push('<span class="review-badge unidentified">Unidentified</span>');
+        if (candidate.discretionary) badges.push('<span class="review-badge discretionary">Discretionary</span>');
+
+        const sourceNames = [...new Set((candidate.source_files || []).filter(Boolean))].slice(0, 6);
+        let sourceMarkup = '';
+        if (sourceNames.length) {
+          const links = sourceNames.map(name =>
+            `<a href="/api/source_pdf?name=${encodeURIComponent(name)}" target="_blank" rel="noopener">${escapeHtml(name)}</a>`
+          ).join('<br>');
+          sourceMarkup = `<details class="source-dropdown"><summary title="${escapeHtml(sourceNames.join(' • '))}">Sources (${sourceNames.length})</summary><div class="source-popover">${links}</div></details>`;
+        }
+
+        card.innerHTML = `
+          <div class="review-card-head">
+            <div><div class="review-description">${escapeHtml(candidate.description)}</div><div class="review-path">${escapeHtml(candidate.category)} · ${escapeHtml(candidate.macro_group)}</div></div>
+            <div class="review-amount">${escapeHtml(candidate.currency)} ${parseFloat(candidate.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </div>
+          <div class="review-meta">${badges.join('')}<span>${parseInt(candidate.count || 0, 10)} transaction(s)</span></div>
+          ${sourceMarkup}`;
+        messagesContainer.appendChild(card);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value == null ? '' : String(value);
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

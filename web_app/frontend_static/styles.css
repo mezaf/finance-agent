@@ -1,0 +1,38 @@
+body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;color:#1f2937;background:#f8fafc}
+.app-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:24px 32px;background:#ffffff;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(15,23,42,0.05)}
+.brand{font-weight:800;font-size:1.6rem;color:#111827}
+.summary-text{max-width:560px;color:#475569;font-size:0.95rem;line-height:1.75}
+.app-main{display:grid;grid-template-columns:1.8fr 1fr;gap:18px;padding:24px 32px}
+.dashboard-panel{display:flex;flex-direction:column;gap:18px}
+.chat-panel{display:flex;flex-direction:column;gap:16px}
+.card{background:#ffffff;padding:22px;border-radius:22px;box-shadow:0 18px 50px rgba(15,23,42,0.06);border:1px solid rgba(148,163,184,0.16)}
+.chart-card{min-height:540px;display:flex;flex-direction:column}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}
+.eyebrow{margin:0;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#4338ca}
+.card-header h2{margin:4px 0 0;font-size:1.6rem;color:#0f172a}
+.card-note{color:#64748b;font-size:0.95rem;max-width:320px}
+.chat-card{display:flex;flex-direction:column;gap:16px}
+.chat-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.chat-header h2{margin:4px 0 0;font-size:1.4rem;color:#0f172a}
+#status{font-size:0.9rem;color:#0f172a;font-weight:700;background:#eef6ff;padding:8px 14px;border-radius:999px;border:1px solid #bfdbfe;white-space:nowrap}
+.chat-messages{flex:1;overflow:auto;height:400px;padding:20px;border-radius:20px;background:#f8fafc;border:1px solid #e2e8f0}
+.chat-bubble{padding:14px 18px;border-radius:20px;margin-bottom:12px;max-width:80%;line-height:1.6;box-shadow:0 6px 20px rgba(15,23,42,0.05)}
+.chat-bubble.user{background:#dcfce7;align-self:flex-end;color:#0f172a}
+.chat-bubble.assistant{background:#eff6ff;align-self:flex-start;color:#0f172a}
+.chat-input-row{display:flex;gap:10px;padding:0 8px 8px}
+.chat-input-row input[type="text"],.chat-input-row input[type="file"]{border:1px solid #cbd5e1;border-radius:16px;padding:14px 16px;font-size:0.95rem;outline:none}
+.chat-input-row input[type="text"]{flex:1}
+.chat-input-row input[type="file"]{flex:0 0 190px}
+.primary-button,button{background:#4338ca;color:#fff;border:none;padding:14px 18px;border-radius:16px;cursor:pointer;font-weight:700;transition:transform .1s ease,background .2s ease}
+.primary-button:hover,button:hover{background:#3730a3;transform:translateY(-1px)}
+.drill-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.drill-button{margin:0;padding:12px 16px;border-radius:16px;border:1px solid #e2e8f0;background:#ffffff;color:#334155;font-weight:700;cursor:pointer;transition:background .2s ease,border-color .2s ease}
+.drill-button:hover{background:#eff6ff;border-color:#bfdbfe}
+.chart-wrap{display:flex;justify-content:center;align-items:center;flex:1}
+.txn-list{max-height:300px;overflow:auto;border-radius:20px;border:1px solid #e2e8f0;background:#ffffff}
+.txn-row{display:grid;grid-template-columns:120px 1fr 110px 100px;padding:14px 18px;border-bottom:1px solid #f1f5f9;align-items:center}
+.txn-row:last-child{border-bottom:none}
+.txn-row div{font-size:0.95rem;color:#334155}
+#drillResults{margin-top:16px}
+@media(max-width:1120px){.app-main{grid-template-columns:1fr;}} 
+@media(max-width:780px){.app-header,.app-main{padding:16px}.chat-panel{width:100%}.chat-input-row{flex-direction:column} .chat-input-row input[type="file"]{width:100%}}

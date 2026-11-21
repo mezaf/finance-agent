@@ -1,6 +1,16 @@
-anthropic
+# Core LLM & Bank Statement Extraction
+google-genai
+pypdf
+
+# Vector Store & Embeddings
 sqlite-vec
 sentence-transformers
+
+# Web Application & API Server
+Flask
+flask-cors
+
+# Environment & Google Drive API Integration
 python-dotenv
 google-api-python-client
 google-auth-httplib2

@@ -1,0 +1,11 @@
+# Web Application Dependencies
+Flask>=3.0
+flask-cors>=4.0
+python-dotenv>=1.0
+google-genai
+sqlite-vec
+sentence-transformers
+pypdf
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
